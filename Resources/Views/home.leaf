@@ -6,11 +6,11 @@
         <p>Welcome back #(username)!</p>
         <ul>
             #for(forum in forums) {
-                <li><a href="https://www.hackingwithswift.com/forum/#(forum.id)">#(forum.name)</a></li>
+                <li><a href="http://localhost:8080/forum/#(forum.id)">#(forum.name)</a></li>
             }
         </ul>
     } else {
-        <a href="https://www.hackingwithswift.com/users/login">Please log in.</a>
+        <a href="http://localhost:8080//users/login">Please log in.</a>
     }
 }
 

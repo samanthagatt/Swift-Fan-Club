@@ -28,6 +28,7 @@ public func configure(
     
     var migrationConfig = MigrationConfig()
     migrationConfig.add(model: Forum.self, database: .sqlite)
+    migrationConfig.add(model: Message.self, database: .sqlite)
     services.register(migrationConfig)
     
     try services.register(LeafProvider())
