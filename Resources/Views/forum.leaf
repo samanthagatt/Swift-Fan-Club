@@ -1,3 +1,4 @@
+#set("title") { #(forum.name) }
 #set("body") {
     <h1>#(forum.name)</h1>
     #if(messages) {

@@ -8,18 +8,6 @@ import FluentSQLite
 /// [Learn More →](https://docs.vapor.codes/3.0/getting-started/structure/#routesswift)
 public func routes(_ router: Router) throws {
     
-    router.get("setup") { req -> String in
-        let item1 = Message(id: 1, forum: 1, title: "Welcome", body: "Hello!", parent: 0, user: "twostraws", date: Date())
-        let item2 = Message(id: 2, forum: 1, title: "Second post", body: "Hello!", parent: 0, user: "twostraws", date: Date())
-        let item3 = Message(id: 3, forum: 1, title: "Test reply", body: "Yay!", parent: 1, user: "twostraws", date: Date())
-        
-        _ = item1.create(on: req)
-        _ = item2.create(on: req)
-        _ = item3.create(on: req)
-        
-        return "Hello, world!"
-    }
-    
     router.get { req -> Future<View> in
         struct HomeContent: Codable {
             var username: String?
@@ -31,7 +19,9 @@ public func routes(_ router: Router) throws {
         }
     }
     
-    router.get("forum", Int.parameter) { req -> Future<View> in
+    let forum = router.grouped("forum", Int.parameter)
+    
+    forum.get() { req -> Future<View> in
         struct ForumContext: Codable {
             var username: String?
             var forum: Forum
@@ -49,6 +39,34 @@ public func routes(_ router: Router) throws {
             return query.flatMap(to: View.self) { messages in
                 let context = ForumContext(username: getUsername(req), forum: forum, messages: messages)
                 return try req.view().render("forum", context)
+            }
+        }
+    }
+    
+    forum.get(Int.parameter) { req -> Future<View> in
+        struct MessageContext: Codable {
+            var username: String?
+            var forum: Forum
+            var message: Message
+            var replies: [Message]
+        }
+        let forumID = try req.parameters.next(Int.self)
+        let messageID = try req.parameters.next(Int.self)
+        return Forum.find(forumID, on: req).flatMap(to: View.self) { forum in
+            guard let forum = forum else {
+                throw Abort(.notFound)
+            }
+            return Message.find(messageID, on: req).flatMap(to: View.self) { message in
+                guard let message = message else {
+                    throw Abort(.notFound)
+                }
+                let query = Message.query(on: req)
+                    .filter(\.parent == message.id!)
+                    .all()
+                return query.flatMap(to: View.self) { replies in
+                    let context = MessageContext(username: getUsername(req), forum: forum, message: message, replies: replies)
+                    return try req.view().render("message", context)
+                }
             }
         }
     }
