@@ -1,5 +1,5 @@
 import Vapor
-import Fluent
+import SQLite
 import FluentSQLite
 import Leaf
 
@@ -16,19 +16,22 @@ public func configure(
     try routes(router)
     services.register(router, as: Router.self)
 
-    let directoryConfig = DirectoryConfig.detect()
-    services.register(directoryConfig)
+    let dirConfig = DirectoryConfig.detect()
+    services.register(dirConfig)
     
     try services.register(FluentSQLiteProvider())
     
     var databaseConfig = DatabasesConfig()
-    let db = try SQLiteDatabase(storage: .file(path: "\(directoryConfig.workDir)forums.db"))
+    let db = try SQLiteDatabase(storage: .file(path: dirConfig.workDir +
+        "forums.db"))
     databaseConfig.add(database: db, as: .sqlite)
     services.register(databaseConfig)
     
     var migrationConfig = MigrationConfig()
-    migrationConfig.add(model: Forum.self, database: .sqlite)
-    migrationConfig.add(model: Message.self, database: .sqlite)
+    migrationConfig.add(model: Forum.self,
+                        database: DatabaseIdentifier<Forum.Database>.sqlite)
+    migrationConfig.add(model: Message.self,
+                        database: DatabaseIdentifier<Message.Database>.sqlite)
     services.register(migrationConfig)
     
     try services.register(LeafProvider())
