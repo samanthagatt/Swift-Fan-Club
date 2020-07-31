@@ -19,8 +19,7 @@
             placeholder="Enter a title" />
         </p>
         <p>
-            <textarea name="body" class="form-control" rows="5">
-            </textarea>
+            <textarea name="body" class="form-control" rows="5"></textarea>
         </p>
         <p>
             <button type="submit" class="btn btn-lg btn-primary">

@@ -78,6 +78,8 @@ public func routes(_ router: Router) throws {
             }
         }
     }
+    forums.post(use: postMessage)
+    forums.post(Int.parameter, use: postMessage)
     users.get("create") { req in
         try req.view().render("create-user")
     }
@@ -125,3 +127,20 @@ public func routes(_ router: Router) throws {
 }
 
 func getUsername(_ req: Request) -> String? { try? req.session()["username"] }
+
+func postMessage(_ req: Request) throws -> Future<Response> {
+    guard let username = getUsername(req) else { throw Abort(.unauthorized) }
+    // Get forum and parent from url parameters
+    let forumID = try req.parameters.next(Int.self)
+    let parentID = (try? req.parameters.next(Int.self)) ?? 0
+    // Get title and body of message from post body
+    let title: String = try req.content.syncGet(at: "title")
+    let body: String = try req.content.syncGet(at: "body")
+    let message = Message(id: nil, forum: forumID, title: title, body: body,
+                          parent: parentID, user: username, date: Date())
+    return message.save(on: req).map(to: Response.self) { message in
+        return parentID == 0 ?
+            req.redirect(to: "/forums/\(forumID)\("/", message.id)") :
+            req.redirect(to: "/forums/\(forumID)/\(parentID)")
+    }
+}
