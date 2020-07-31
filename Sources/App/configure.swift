@@ -32,8 +32,15 @@ public func configure(
                         database: DatabaseIdentifier<Forum.Database>.sqlite)
     migrationConfig.add(model: Message.self,
                         database: DatabaseIdentifier<Message.Database>.sqlite)
+    migrationConfig.add(model: User.self,
+                        database: DatabaseIdentifier<User.Database>.sqlite)
     services.register(migrationConfig)
     
     try services.register(LeafProvider())
     config.prefer(LeafRenderer.self, for: ViewRenderer.self)
+    
+    var middlewareConfig = MiddlewareConfig.default()
+    middlewareConfig.use(SessionsMiddleware.self)
+    services.register(middlewareConfig)
+    config.prefer(MemoryKeyedCache.self, for: KeyedCache.self)
 }

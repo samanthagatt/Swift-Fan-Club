@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  Forum.swift
 //  
 //
 //  Created by Samantha Gatt on 7/29/20.

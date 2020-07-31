@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  Message.swift
 //  
 //
 //  Created by Samantha Gatt on 7/30/20.

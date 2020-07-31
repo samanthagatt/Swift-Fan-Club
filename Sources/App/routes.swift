@@ -2,12 +2,14 @@ import Routing
 import Vapor
 import Fluent
 import FluentSQLite
+import Crypto
 
 /// Register your application's routes here.
 ///
 /// [Learn More →](https://docs.vapor.codes/3.0/getting-started/structure/#routesswift)
 public func routes(_ router: Router) throws {
     let forums = router.grouped("forums", Int.parameter)
+    let users = router.grouped("users")
     
     router.get { req -> Future<View> in
         struct Context: Codable {
@@ -76,6 +78,50 @@ public func routes(_ router: Router) throws {
             }
         }
     }
+    users.get("create") { req in
+        try req.view().render("create-user")
+    }
+    users.post("create") { req -> Future<View> in
+        var user = try req.content.syncDecode(User.self)
+        return User
+            .query(on: req)
+            .filter(\.username == user.username)
+            .first()
+            .flatMap(to: View.self) { found in
+                if found != nil {
+                    return try req.view().render("create-user", ["error": "true"])
+                } else {
+                    user.password = try BCrypt.hash(user.password)
+                    return user.save(on: req).flatMap(to: View.self) { _ in
+                        return try req.view().render("welcome-user")
+                    }
+                }
+        }
+    }
+    users.get("login") { req in
+        try req.view().render("login-user")
+    }
+    users.post(User.self, at: "login") { req, user -> Future<View> in
+        return User
+            .query(on: req)
+            .filter(\.username == user.username)
+            .first()
+            .flatMap(to: View.self) { found in
+                if let found = found {
+                    if try BCrypt.verify(user.password, created: found.password) {
+                        try req.session()["username"] = found.username
+                        return try req.view().render("welcome-user")
+                    } else {
+                        let context = ["error":
+                            "Username and password do not match"]
+                        return try req.view().render("login-user", context)
+                    }
+                } else {
+                    let context = ["error": "No user found with username"]
+                    return try req.view().render("login-user", context)
+                }
+        }
+    }
 }
 
-func getUsername(_ req: Request) -> String? { "Testing" }
+func getUsername(_ req: Request) -> String? { try? req.session()["username"] }
